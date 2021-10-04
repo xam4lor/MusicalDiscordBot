@@ -1,6 +1,6 @@
 // Requires
 const m_discord = require("discord.js");
-const m_ytdl    = require("ytdl-core");
+const m_ytdl = require("ytdl-core");
 
 const { prefix, token } = require('./config.json');
 
@@ -9,17 +9,17 @@ const client = new m_discord.Client();
 client.login(token);
 
 // Log basic infos
-client.once('ready',        () => console.log("Bot ready."));
+client.once('ready', () => console.log("Bot ready."));
 client.once('reconnecting', () => console.log("Bot reconnecting."));
-client.once('disconnect',   () => console.log("Bot disconnecting."));
+client.once('disconnect', () => console.log("Bot disconnecting."));
 
 
 let musicQueue = {
-    playing : false,
-    channel : undefined,
-    connection : undefined,
-    songs : [],
-    volume : 5
+    playing: false,
+    channel: undefined,
+    connection: undefined,
+    songs: [],
+    volume: 5
     /* {
         playing: false,
         title: undefined,
@@ -53,6 +53,7 @@ client
    - **np** : Display the current song playing status.
    - **q** / **queue** / **ls** / **list** : List every song in the queue.
    - **clear** : Clear the next songs in the playlist.
+   - **remove** [integer] : Remove the nth song in the playlist.
    - **stop** : Stop the current music.
    - **volume** [integer] : Change the volume level (*default 5*)
    - **leave** : The bot leave the channel.`);
@@ -116,8 +117,29 @@ client
                 let s = musicQueue.songs[0];
                 musicQueue.songs = [s];
             }
-            
+
             message.channel.send("Songs cleared.");
+
+            success = true;
+        }
+
+
+        // Remove the nth song
+        else if (message.content.startsWith(`${prefix}remove`) || message.content.startsWith(`${prefix}rm`)) {
+            if (!message.member.voice.channel)
+                return message.channel.send("You have to be in a voice channel to see the current track.");
+
+            if (musicQueue.songs.length == 0)
+                return message.channel.send("There is no song in the playlist.");
+
+            if (!musicQueue.connection || !musicQueue.connection.dispatcher)
+                return message.channel.send("No music is currently playing.");
+
+            if (isNaN(message.content.split(' ')[1]) || parseInt(message.content.split(' ')[1]) < 2 || parseInt(message.content.split(' ')[1]) > musicQueue.songs.length)
+                return message.channel.send("The track number you set is not a number, is lower than 2 (to remove the first track, use the skip command), or is greater than the number of tracks in the playlist.");
+
+            musicQueue.songs.splice((parseInt(message.content.split(' ')[1] - 1)), 1);
+            message.channel.send("Song removed.");
 
             success = true;
         }
@@ -130,7 +152,7 @@ client
 
             if (musicQueue.songs.length == 0)
                 return message.channel.send("No song is currently playing.");
-            
+
             // Print the current song
             message.channel.send(`Currently playing **${musicQueue.songs[0].title}**.`);
             message.channel.send(`${musicQueue.songs[0].link}`);
@@ -203,7 +225,7 @@ client
 
             if (!musicQueue.connection || !musicQueue.connection.dispatcher)
                 return message.channel.send("No music is currently playing.");
-            
+
             if (isNaN(message.content.split(' ')[1]) || parseInt(message.content.split(' ')[1]) < 1)
                 return message.channel.send("The volume number you set is not a number, or is lower than 1.");
 
@@ -221,7 +243,7 @@ client
         }
     })
     .on("error", error => "An error occured : " + console.error(error))
-;
+    ;
 
 
 
