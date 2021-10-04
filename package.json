@@ -1,0 +1,17 @@
+{
+  "name": "musical-bot",
+  "version": "1.0.0",
+  "description": "The best musical bot ever.",
+  "main": "app.js",
+  "scripts": {
+    "app": "node app.js"
+  },
+  "author": "xam4lor",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.6.0",
+    "discord.js": "^12.5.3",
+    "ffmpeg": "0.0.4",
+    "ytdl-core": "^4.9.1"
+  }
+}
