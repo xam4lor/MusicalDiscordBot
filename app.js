@@ -49,18 +49,46 @@ client
         // Help command
         else if (message.content.startsWith(`${prefix}help`)) {
             message.channel.send(`List of available commands :
-   - **ping** : Check the bot status.
-   - **play** [*song*] : Add the song to the playlist.
-   - **skip** : Skip the current song.
-   - **join** : The bot will join the audio channel of the user who made the command.
-   - **np** : Display the current song playing status.
+   - **play** [*song*] : Add the song to the songs queue list.
+   - **playtop** [*song*] : Add the song to the top of playlist.
+
    - **q** / **queue** / **ls** / **list** : List every song in the queue.
-   - **clear** : Clear the next songs in the playlist.
-   - **remove** [integer] : Remove the nth song in the playlist.
-   - **stop** : Stop the current music.
-   - **volume** [integer] : Change the volume level (*default 5*).
+   - **np** : Display the current song playing status.
    - **lyrics** : Logs the current song lyrics.
-   - **leave** : The bot leave the channel.`);
+   
+   - **skip** : Skip the current song.
+   - **remove** [*integer*] : Remove the nth song in the playlist.
+   - **clear** : Clear the next songs in the playlist.
+   
+   - **join** : The bot will join the audio channel of the user who made the command.
+   - **stop** : Stop the current music.
+   - **leave** : The bot leave the channel.
+
+   - **volume** [*integer*] : Change the volume level (*default 5*).
+   - **ping** : Check the bot status.`);
+
+            success = true;
+        }
+
+
+        // Play music on top of the pile
+        else if (message.content.startsWith(`${prefix}playtop`)) {
+            const voiceChannel = message.member.voice.channel;
+            if (!voiceChannel)
+                return message.channel.send("You need to be in a voice channel for me to play music.");
+
+            // Join channel
+            if (!musicQueue.channel) {
+                musicQueue.channel = voiceChannel;
+                musicQueue.connection = await voiceChannel.join();
+                if (!musicQueue.connection)
+                    return message.channel.send("I couldn't connect to your channel.");
+
+                message.channel.send("Joined your channel.");
+            }
+
+            // Play song
+            playSong(message.channel, message.content.split(' ')[1], true);
 
             success = true;
         }
@@ -83,7 +111,7 @@ client
             }
 
             // Play song
-            playSong(message.channel, message.content.split(' ')[1]);
+            playSong(message.channel, message.content.split(' ')[1], false);
 
             success = true;
         }
@@ -289,8 +317,9 @@ client
  * Plays a song to a given bot channel
  * @param {The channel of the bot} channel 
  * @param {The informations given by the user of the song} songInfos
+ * @param {Should play the song on the top of the others} playTop
  */
-async function playSong(channel, songInfos) {
+async function playSong(channel, songInfos, playTop) {
     musicQueue.channel = channel;
 
     // Search song
@@ -315,14 +344,28 @@ async function playSong(channel, songInfos) {
 
 
     // Add song to queue
-    musicQueue.songs.push({
-        playing: false,
-        title: songInfo.videoDetails.media.song,
-        artist: songInfo.videoDetails.media.artist,
-        link: songInfo.videoDetails.video_url
-    });
-    channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
+    if (playTop && musicQueue.songs.length != 0) {
+        let currentFirst = musicQueue.songs.shift();
+        musicQueue.songs.unshift({
+            playing: false,
+            title: songInfo.videoDetails.media.song,
+            artist: songInfo.videoDetails.media.artist,
+            link: songInfo.videoDetails.video_url
+        });
+        musicQueue.songs.unshift(currentFirst);
+        channel.send(`Added *${songInfo.videoDetails.media.song} by ${songInfo.videoDetails.media.artist}* on top of the queue.`);
 
+    }
+    else {
+        musicQueue.songs.push({
+            playing: false,
+            title: songInfo.videoDetails.media.song,
+            artist: songInfo.videoDetails.media.artist,
+            link: songInfo.videoDetails.video_url
+        });
+        channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
+    }
+    
     // Play first song in queue if first song
     if (musicQueue.songs.length == 1)
         playFirstSong();
