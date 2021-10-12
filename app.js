@@ -342,25 +342,30 @@ async function playSong(channel, songInfos, playTop) {
     if (!found)
         return;
 
+    let song = songInfo.videoDetails.media.song || songInfo.videoDetails.title;
+    let artist = songInfo.videoDetails.media.artist || '.';
+    if (song == undefined)
+        song = songInfo.videoDetails.title;
+
 
     // Add song to queue
     if (playTop && musicQueue.songs.length != 0) {
         let currentFirst = musicQueue.songs.shift();
         musicQueue.songs.unshift({
             playing: false,
-            title: songInfo.videoDetails.media.song,
-            artist: songInfo.videoDetails.media.artist,
+            title: song,
+            artist: artist,
             link: songInfo.videoDetails.video_url
         });
         musicQueue.songs.unshift(currentFirst);
-        channel.send(`Added *${songInfo.videoDetails.media.song} by ${songInfo.videoDetails.media.artist}* on top of the queue.`);
+        channel.send(`Added *${song} by ${artist}* on top of the queue.`);
 
     }
     else {
         musicQueue.songs.push({
             playing: false,
-            title: songInfo.videoDetails.media.song,
-            artist: songInfo.videoDetails.media.artist,
+            title: song,
+            artist: artist,
             link: songInfo.videoDetails.video_url
         });
         channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
