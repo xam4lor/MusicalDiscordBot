@@ -3,8 +3,9 @@ const m_discord = require("discord.js");
 const m_ytdl = require("ytdl-core");
 const m_ytlist = require('youtube-playlist');
 const m_lyricsFinder = require('lyrics-finder');
+const m_fetch = require('node-fetch');
 
-const { prefix, token } = require('./config.json');
+const { prefix, token, youtubeKey } = require('./config.json');
 
 // Starts bot
 const client = new m_discord.Client();
@@ -25,6 +26,7 @@ let musicQueue = {
     /* {
         playing: false,
         title: undefined,
+        artist : undefined,
         link: undefined
     } */
 };
@@ -309,8 +311,29 @@ client
         }
     })
     .on("error", error => "An error occured : " + console.error(error))
-    ;
+;
 
+
+
+/**
+ * @param {The playlist URL} songInfo 
+ * @return {The list of songs URLs in the playlist}
+ */
+async function findSongsInList(songInfo) {
+    let playlistID = songInfo.match(/list=()\w+&/)[0].substring(5).replace("&", '');
+    let url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistID}&key=${youtubeKey}&part=snippet&maxResults=50`;
+
+    let settings = { method: "Get" };
+    let res1 = await m_fetch(url, settings);
+    let res = await res1.json();
+
+    let songsInfo = [];
+    for (let i = 0; i < res["items"].length; i++) {
+        songsInfo.push("https://www.youtube.com/watch?v=" + res["items"][i].snippet.resourceId.videoId);
+    }
+
+    return songsInfo;
+}
 
 
 /**
@@ -323,57 +346,51 @@ async function playSong(channel, songInfos, playTop) {
     musicQueue.channel = channel;
 
     // Search song
-    /* m_ytlist(songInfos, 'url').then(res => {
-        console.log(res);
-         Object
-        { data:
-         { playlist:
-            [ 'https://youtube.com/watch?v=bgU7FeiWKzc',
-              'https://youtube.com/watch?v=3PUVr8jFMGg',
-              'https://youtube.com/watch?v=3pXVHRT-amw',
-              'https://youtube.com/watch?v=KOVc5o5kURE' ] } }
-         
-    }); */
-    let found = true;
-    const songInfo = await m_ytdl.getInfo(songInfos).catch((error) => {
-        channel.send(`Couldn't find your song.`);
-        found = false;
-    });
-    if (!found)
-        return;
-
-    let song = songInfo.videoDetails.media.song || songInfo.videoDetails.title;
-    let artist = songInfo.videoDetails.media.artist || '.';
-    if (song == undefined)
-        song = songInfo.videoDetails.title;
-
-
-    // Add song to queue
-    if (playTop && musicQueue.songs.length != 0) {
-        let currentFirst = musicQueue.songs.shift();
-        musicQueue.songs.unshift({
-            playing: false,
-            title: song,
-            artist: artist,
-            link: songInfo.videoDetails.video_url
-        });
-        musicQueue.songs.unshift(currentFirst);
-        channel.send(`Added *${song} by ${artist}* on top of the queue.`);
-
-    }
-    else {
-        musicQueue.songs.push({
-            playing: false,
-            title: song,
-            artist: artist,
-            link: songInfo.videoDetails.video_url
-        });
-        channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
-    }
+    let songs = await findSongsInList(songInfos);
+    channel.send(`Adding ${songs.length} songs to the queue.`);
     
-    // Play first song in queue if first song
-    if (musicQueue.songs.length == 1)
-        playFirstSong();
+    for (let i = 0; i < songs.length; i++) {
+        let found = true;
+        const songInfo = await m_ytdl.getInfo(songs[i]).catch((error) => {
+                channel.send(`Couldn't find your song.`);
+                found = false;
+            });
+        if (!found)
+            return;
+
+        let song = songInfo.videoDetails.media.song || songInfo.videoDetails.title;
+        let artist = songInfo.videoDetails.media.artist || '.';
+        if (song == undefined)
+            song = songInfo.videoDetails.title;
+
+
+        // Add song to queue
+        if (playTop && musicQueue.songs.length != 0) {
+            let currentFirst = musicQueue.songs.shift();
+            musicQueue.songs.unshift({
+                playing: false,
+                title: song,
+                artist: artist,
+                link: songInfo.videoDetails.video_url
+            });
+            musicQueue.songs.unshift(currentFirst);
+            channel.send(`Added *${song} by ${artist}* on top of the queue.`);
+
+        }
+        else {
+            musicQueue.songs.push({
+                playing: false,
+                title: song,
+                artist: artist,
+                link: songInfo.videoDetails.video_url
+            });
+            channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
+        }
+
+        // Play first song in queue if first song
+        if (musicQueue.songs.length == 1)
+            playFirstSong();
+    }
 }
 
 
