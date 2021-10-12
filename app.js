@@ -1,6 +1,8 @@
 // Requires
 const m_discord = require("discord.js");
 const m_ytdl = require("ytdl-core");
+const m_ytlist = require('youtube-playlist');
+const m_lyricsFinder = require('lyrics-finder');
 
 const { prefix, token } = require('./config.json');
 
@@ -50,12 +52,14 @@ client
    - **ping** : Check the bot status.
    - **play** [*song*] : Add the song to the playlist.
    - **skip** : Skip the current song.
+   - **join** : The bot will join the audio channel of the user who made the command.
    - **np** : Display the current song playing status.
    - **q** / **queue** / **ls** / **list** : List every song in the queue.
    - **clear** : Clear the next songs in the playlist.
    - **remove** [integer] : Remove the nth song in the playlist.
    - **stop** : Stop the current music.
-   - **volume** [integer] : Change the volume level (*default 5*)
+   - **volume** [integer] : Change the volume level (*default 5*).
+   - **lyrics** : Logs the current song lyrics.
    - **leave** : The bot leave the channel.`);
 
             success = true;
@@ -69,7 +73,7 @@ client
                 return message.channel.send("You need to be in a voice channel for me to play music.");
 
             // Join channel
-            if (!musicQueue.channel || voiceChannel.name != musicQueue.channel.name) {
+            if (!musicQueue.channel) {
                 musicQueue.channel = voiceChannel;
                 musicQueue.connection = await voiceChannel.join();
                 if (!musicQueue.connection)
@@ -124,6 +128,23 @@ client
         }
 
 
+        // Force join the current channel
+        else if (message.content.startsWith(`${prefix}join`)) {
+            const voiceChannel = message.member.voice.channel;
+            if (!voiceChannel)
+                return message.channel.send("You need to be in a voice channel for me to play music.");
+
+            musicQueue.channel = voiceChannel;
+            musicQueue.connection = await voiceChannel.join();
+            if (!musicQueue.connection)
+                return message.channel.send("I couldn't connect to your channel.");
+
+            message.channel.send("Joined your channel.");
+
+            success = true;
+        }
+
+
         // Remove the nth song
         else if (message.content.startsWith(`${prefix}remove`) || message.content.startsWith(`${prefix}rm`)) {
             if (!message.member.voice.channel)
@@ -154,7 +175,7 @@ client
                 return message.channel.send("No song is currently playing.");
 
             // Print the current song
-            message.channel.send(`Currently playing **${musicQueue.songs[0].title}**.`);
+            message.channel.send(`Currently playing **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
             message.channel.send(`${musicQueue.songs[0].link}`);
 
             success = true;
@@ -172,9 +193,25 @@ client
             // Print the current song
             let text = 'List of songs in the queue:';
             for (let i = 0; i < musicQueue.songs.length; i++) {
-                text += `\n - #${i + 1}/${musicQueue.songs.length} - *${musicQueue.songs[i].title}*`;
+                text += `\n - #${i + 1}/${musicQueue.songs.length} - *${musicQueue.songs[i].title} by ${musicQueue.songs[i].artist}*`;
             }
             message.channel.send(text);
+
+            success = true;
+        }
+
+
+
+        // Display the song lyrics
+        else if (message.content.startsWith(`${prefix}lyrics`)) {
+            if (!message.member.voice.channel)
+                return message.channel.send("You have to be in a voice channel to see the current track.");
+
+            if (musicQueue.songs.length == 0)
+                return message.channel.send("There is no song in the playlist.");
+            
+            let lyrics = await getLyrics(musicQueue.songs[0].artist, musicQueue.songs[0].title);
+            message.channel.send(lyrics);
 
             success = true;
         }
@@ -199,18 +236,19 @@ client
 
         // Leave channel
         else if (message.content.startsWith(`${prefix}leave`)) {
-            if (musicQueue.channel == undefined)
-                return message.channel.send("I'm currently not in your channel.");
+            let userVoiceChannel = message.member.voice.channel;
+            if (!userVoiceChannel) {
+                message.channel.send("You have to be in a voice channel to make the bot leave the music channel.");
+            }
 
-            musicQueue.songs = [];
-
-            if (!musicQueue.connection || !musicQueue.connection.dispatcher)
-                return message.channel.send("No music is currently playing.");
-
-            musicQueue.playing = false;
-            musicQueue.connection.dispatcher.end();
-            musicQueue.channel.leave();
-            message.channel.send("I have successfully left the voice channel.");
+            let clientVoiceConnection = message.guild.voice;
+            if (userVoiceChannel === clientVoiceConnection.channel) {
+                clientVoiceConnection.channel.leave();
+                message.channel.send("I have successfully left the voice channel.");
+                musicQueue.playing = false;
+            }
+            else
+                message.channel.send('You can only execute this command if you share the same voiceChannel as the client.');
 
             success = true;
         }
@@ -256,6 +294,17 @@ async function playSong(channel, songInfos) {
     musicQueue.channel = channel;
 
     // Search song
+    /* m_ytlist(songInfos, 'url').then(res => {
+        console.log(res);
+         Object
+        { data:
+         { playlist:
+            [ 'https://youtube.com/watch?v=bgU7FeiWKzc',
+              'https://youtube.com/watch?v=3PUVr8jFMGg',
+              'https://youtube.com/watch?v=3pXVHRT-amw',
+              'https://youtube.com/watch?v=KOVc5o5kURE' ] } }
+         
+    }); */
     let found = true;
     const songInfo = await m_ytdl.getInfo(songInfos).catch((error) => {
         channel.send(`Couldn't find your song.`);
@@ -268,10 +317,11 @@ async function playSong(channel, songInfos) {
     // Add song to queue
     musicQueue.songs.push({
         playing: false,
-        title: songInfo.videoDetails.title,
+        title: songInfo.videoDetails.media.song,
+        artist: songInfo.videoDetails.media.artist,
         link: songInfo.videoDetails.video_url
     });
-    channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
+    channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
 
     // Play first song in queue if first song
     if (musicQueue.songs.length == 1)
@@ -283,8 +333,12 @@ async function playSong(channel, songInfos) {
  * Plays the first song in the queue
  */
 async function playFirstSong() {
+    if (musicQueue.songs.length == 0)
+        return;
+
     let videoStream = m_ytdl(musicQueue.songs[0].link);
 
+    let error = false;
     const dispatcher = musicQueue.connection
         .play(videoStream)
         .on("finish", () => {
@@ -300,12 +354,31 @@ async function playFirstSong() {
         .on("error", error => {
             musicQueue.channel.send(`Error while playing song *${musicQueue.songs[0].title}*.`);
             console.error(error);
+            error = true;
         });
 
+    if (error)
+        return;
+
     dispatcher.setVolumeLogarithmic(musicQueue.volume / 5);
-    musicQueue.channel.send(`Started playing **${musicQueue.songs[0].title}**.`);
+    musicQueue.channel.send(`Started playing **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
 
     musicQueue.playing = true;
     musicQueue.songs[0].playing = true;
+}
+
+
+/**
+ * Return the song lyrics
+ * @param artist 
+ * @param title 
+ */
+async function getLyrics(artist, title) {
+    let lyrics = `Lyrics of **${title}** by *${artist}* :\n\n`;
+
+    lyrics += await m_lyricsFinder(artist, title) || "Lyrics not found.";
+    if (lyrics.length == 0)
+        return "Lyrics not found.";
+    return lyrics;
 }
 

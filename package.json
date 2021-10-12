@@ -12,6 +12,8 @@
     "@discordjs/opus": "^0.6.0",
     "discord.js": "^12.5.3",
     "ffmpeg": "0.0.4",
+    "lyrics-finder": "^21.7.0",
+    "youtube-playlist": "^1.0.4",
     "ytdl-core": "^4.9.1"
   }
 }
