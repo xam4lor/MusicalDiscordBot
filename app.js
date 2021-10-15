@@ -320,7 +320,7 @@ client
  * @return {The list of songs URLs in the playlist}
  */
 async function findSongsInList(songInfo) {
-    let playlistID = songInfo.match(/list=()\w+&/)[0].substring(5).replace("&", '');
+    let playlistID = songInfo.match(/list=()\w+/)[0].substring(5).replace("&", '');
     let url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistID}&key=${youtubeKey}&part=snippet&maxResults=50`;
 
     let settings = { method: "Get" };
