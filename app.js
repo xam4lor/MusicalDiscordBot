@@ -320,19 +320,24 @@ client
  * @return {The list of songs URLs in the playlist}
  */
 async function findSongsInList(songInfo) {
-    let playlistID = songInfo.match(/list=()\w+/)[0].substring(5).replace("&", '');
-    let url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistID}&key=${youtubeKey}&part=snippet&maxResults=50`;
-
-    let settings = { method: "Get" };
-    let res1 = await m_fetch(url, settings);
-    let res = await res1.json();
-
-    let songsInfo = [];
-    for (let i = 0; i < res["items"].length; i++) {
-        songsInfo.push("https://www.youtube.com/watch?v=" + res["items"][i].snippet.resourceId.videoId);
+    let playlistID = songInfo.match(/list=()\w+/);
+    if (playlistID.length == 0) { // Is not a playlist
+        return [songsInfo];
     }
+    else { // Is a playlist
+        let url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistID[0].substring(5).replace("&", '')}&key=${youtubeKey}&part=snippet&maxResults=50`;
 
-    return songsInfo;
+        let settings = { method: "Get" };
+        let res1 = await m_fetch(url, settings);
+        let res = await res1.json();
+
+        let songsInfo = [];
+        for (let i = 0; i < res["items"].length; i++) {
+            songsInfo.push("https://www.youtube.com/watch?v=" + res["items"][i].snippet.resourceId.videoId);
+        }
+
+        return songsInfo;
+    }
 }
 
 
