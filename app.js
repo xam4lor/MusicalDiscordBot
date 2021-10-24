@@ -52,6 +52,7 @@ client
         else if (message.content.startsWith(`${prefix}help`)) {
             message.channel.send(`List of available commands :
    - **play** [*song*] : Add the song to the songs queue list.
+   - **add** [*position*] [*song*] : Add the song to the songs queue list at a specific position.
    - **playtop** [*song*] : Add the song to the top of playlist.
 
    - **q** / **queue** / **ls** / **list** : List every song in the queue.
@@ -90,7 +91,7 @@ client
             }
 
             // Play song
-            playSong(message.channel, message.content.split(' ')[1], true);
+            playSong(message.channel, message.content.split(' ')[1], 0);
 
             success = true;
         }
@@ -113,7 +114,30 @@ client
             }
 
             // Play song
-            playSong(message.channel, message.content.split(' ')[1], false);
+            playSong(message.channel, message.content.split(' ')[1], -1);
+
+            success = true;
+        }
+
+
+        // Add music at a specific point in queue
+        else if (message.content.startsWith(`${prefix}add`)) {
+            const voiceChannel = message.member.voice.channel;
+            if (!voiceChannel)
+                return message.channel.send("You need to be in a voice channel for me to play music.");
+
+            // Join channel
+            if (!musicQueue.channel) {
+                musicQueue.channel = voiceChannel;
+                musicQueue.connection = await voiceChannel.join();
+                if (!musicQueue.connection)
+                    return message.channel.send("I couldn't connect to your channel.");
+
+                message.channel.send("Joined your channel.");
+            }
+
+            // Play song
+            playSong(message.channel, message.content.split(' ')[2], message.content.split(' ')[1]);
 
             success = true;
         }
@@ -347,7 +371,7 @@ async function findSongsInList(songInfo) {
  * @param {The informations given by the user of the song} songInfos
  * @param {Should play the song on the top of the others} playTop
  */
-async function playSong(channel, songInfos, playTop) {
+async function playSong(channel, songInfos, pos) {
     musicQueue.channel = channel;
 
     // Search song
@@ -370,7 +394,7 @@ async function playSong(channel, songInfos, playTop) {
 
 
         // Add song to queue
-        if (playTop && musicQueue.songs.length != 0) {
+        if (pos == 0 && musicQueue.songs.length != 0) {
             let currentFirst = musicQueue.songs.shift();
             musicQueue.songs.unshift({
                 playing: false,
@@ -382,7 +406,22 @@ async function playSong(channel, songInfos, playTop) {
             channel.send(`Added *${song} by ${artist}* on top of the queue.`);
 
         }
-        else {
+        else if (musicQueue.songs.length != 0) {
+            let firstHalf = musicQueue.songs.splice(0, pos);
+            musicQueue.songs.unshift({
+                playing: false,
+                title: song,
+                artist: artist,
+                link: songInfo.videoDetails.video_url
+            });
+            for(let i = 0; i < firstHalf.length; i++)
+            {
+                musicQueue.songs.unshift(element);
+            }
+            channel.send(`Added *${song} by ${artist}* at position ${pos}* of the queue.`);
+
+        }
+        else if(pos == -1) {
             musicQueue.songs.push({
                 playing: false,
                 title: song,
