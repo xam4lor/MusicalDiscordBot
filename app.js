@@ -319,10 +319,10 @@ client
  * @param {The playlist URL} songInfo 
  * @return {The list of songs URLs in the playlist}
  */
-async function findSongsInList(songInfo) {
+async function findSongsInList(songInfo, channel) {
     let playlistID = songInfo.match(/list=()\w+/);
-    if (playlistID.length == 0) { // Is not a playlist
-        return [songsInfo];
+    if (!playlistID || playlistID.length == 0) { // Is not a playlist
+        return [songInfo];
     }
     else { // Is a playlist
         let url = `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlistID[0].substring(5).replace("&", '')}&key=${youtubeKey}&part=snippet&maxResults=50`;
@@ -331,6 +331,10 @@ async function findSongsInList(songInfo) {
         let res1 = await m_fetch(url, settings);
         let res = await res1.json();
 
+        if (res["items"] == undefined) {
+            channel.send("An error has occured while trying to fetch videos in the given playlist.");
+            return [];
+        }
         let songsInfo = [];
         for (let i = 0; i < res["items"].length; i++) {
             songsInfo.push("https://www.youtube.com/watch?v=" + res["items"][i].snippet.resourceId.videoId);
@@ -351,7 +355,7 @@ async function playSong(channel, songInfos, playTop) {
     musicQueue.channel = channel;
 
     // Search song
-    let songs = await findSongsInList(songInfos);
+    let songs = await findSongsInList(songInfos, channel);
     channel.send(`Adding ${songs.length} songs to the queue.`);
     
     for (let i = 0; i < songs.length; i++) {
