@@ -115,7 +115,7 @@ client
             // Play song
             playSong(message.channel, message.content.split(' ')[2], parseInt(message.content.split(' ')[1]));
 
-            succes = true;
+            success = true;
         }
 
         // Play music
