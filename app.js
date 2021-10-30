@@ -58,11 +58,11 @@ client
    - **q** / **queue** / **ls** / **list** : List every song in the queue.
    - **np** : Display the current song playing status.
    - **lyrics** : Logs the current song lyrics.
-   
+
    - **skip** : Skip the current song.
    - **remove** [*integer*] : Remove the nth song in the playlist.
    - **clear** : Clear the next songs in the playlist.
-   
+
    - **join** : The bot will join the audio channel of the user who made the command.
    - **stop** : Stop the current music.
    - **leave** : The bot leave the channel.
@@ -227,7 +227,10 @@ client
                 return message.channel.send("No song is currently playing.");
 
             // Print the current song
-            message.channel.send(`Currently playing **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
+            if (musicQueue.songs[0].artist != '.')
+                message.channel.send(`Currently playing **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
+            else
+                message.channel.send(`Currently playing **${musicQueue.songs[0].title}**.`);
             message.channel.send(`${musicQueue.songs[0].link}`);
 
             success = true;
@@ -245,7 +248,10 @@ client
             // Print the current song
             let text = 'List of songs in the queue:';
             for (let i = 0; i < musicQueue.songs.length; i++) {
-                text += `\n - #${i + 1}/${musicQueue.songs.length} - *${musicQueue.songs[i].title} by ${musicQueue.songs[i].artist}*`;
+                if (musicQueue.songs[i].artist != '.')
+                    text += `\n - #${i + 1}/${musicQueue.songs.length} - *${musicQueue.songs[i].title} by ${musicQueue.songs[i].artist}*`;
+                else
+                    text += `\n - #${i + 1}/${musicQueue.songs.length} - *${musicQueue.songs[i].title}*`;
             }
             message.channel.send(text);
 
@@ -261,7 +267,7 @@ client
 
             if (musicQueue.songs.length == 0)
                 return message.channel.send("There is no song in the playlist.");
-            
+
             let lyrics = await getLyrics(musicQueue.songs[0].artist, musicQueue.songs[0].title);
             message.channel.send(lyrics);
 
@@ -338,7 +344,7 @@ client
 
 
 /**
- * @param {The playlist URL} songInfo 
+ * @param {The playlist URL} songInfo
  * @return {The list of songs URLs in the playlist}
  */
 async function findSongsInList(songInfo, channel) {
@@ -369,7 +375,7 @@ async function findSongsInList(songInfo, channel) {
 
 /**
  * Plays a song to a given bot channel
- * @param {The channel of the bot} channel 
+ * @param {The channel of the bot} channel
  * @param {The informations given by the user of the song} songInfos
  * @param {Should play the song on the top of the others} playTop
  */
@@ -379,7 +385,7 @@ async function playSong(channel, songInfos, pos) {
     // Search song
     let songs = await findSongsInList(songInfos, channel);
     channel.send(`Adding ${songs.length} songs to the queue.`);
-    
+
     for (let i = 0; i < songs.length; i++) {
         let found = true;
         const songInfo = await m_ytdl.getInfo(songs[i]).catch((error) => {
@@ -405,8 +411,11 @@ async function playSong(channel, songInfos, pos) {
                 link: songInfo.videoDetails.video_url
             });
             musicQueue.songs.unshift(currentFirst);
-            channel.send(`Added *${song} by ${artist}* on top of the queue.`);
 
+            if (artist != '.')
+                channel.send(`Added *${song} by ${artist}* on top of the queue.`);
+            else
+                channel.send(`Added *${song}* on top of the queue.`);
         }
         else if(pos == -1) {
             musicQueue.songs.push({
@@ -415,7 +424,11 @@ async function playSong(channel, songInfos, pos) {
                 artist: artist,
                 link: songInfo.videoDetails.video_url
             });
-            channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
+
+            if (musicQueue.songs[musicQueue.songs.length - 1].artist != '.')
+                channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title} by ${musicQueue.songs[musicQueue.songs.length - 1].artist}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
+            else
+                channel.send(`Added *${musicQueue.songs[musicQueue.songs.length - 1].title}* to the queue (currently at position **${musicQueue.songs.length}** in queue).`);
         }
         else if(pos < musicQueue.songs.length) {
             let firstHalf = musicQueue.songs.splice(0, pos);
@@ -426,12 +439,14 @@ async function playSong(channel, songInfos, pos) {
                 link: songInfo.videoDetails.video_url
             });
 
-            for(let i = 0; i < firstHalf.length; i++)
-            {
+            for(let i = 0; i < firstHalf.length; i++) {
                 musicQueue.songs.unshift(firstHalf[i]);
             }
 
-            channel.send(`Added *${song} by ${artist}* at position ${pos} of the queue.`);
+            if (artist != '.')
+                channel.send(`Added *${song} by ${artist}* at position ${pos} of the queue.`);
+            else
+                channel.send(`Added *${song}* at position ${pos} of the queue.`);
         }
 
         // Play first song in queue if first song
@@ -448,49 +463,72 @@ async function playFirstSong() {
     if (musicQueue.songs.length == 0)
         return;
 
-    let videoStream = m_ytdl(musicQueue.songs[0].link);
+    try {
+        let videoStream = m_ytdl(musicQueue.songs[0].link);
 
-    let error = false;
-    const dispatcher = musicQueue.connection
-        .play(videoStream)
-        .on("finish", () => {
-            if (!musicQueue.playing)
-                return;
+        let error = false;
+        const dispatcher = musicQueue.connection
+            .play(videoStream)
+            .on("finish", () => {
+                if (!musicQueue.playing)
+                    return;
 
-            // Skip to next song in array
-            musicQueue.songs.shift();
+                // Skip to next song in array
+                musicQueue.songs.shift();
 
-            // Play first song
-            playFirstSong();
-        })
-        .on("error", error => {
-            musicQueue.channel.send(`Error while playing song *${musicQueue.songs[0].title}*.`);
-            console.error(error);
-            error = true;
-        });
+                // Play first song
+                playFirstSong();
+            })
+            .on("error", error => {
+                musicQueue.channel.send(`Error while playing song *${musicQueue.songs[0].title}*. Skipping to next song.`);
+                console.error(`Error while playing song *${musicQueue.songs[0].title}* : \n`);
+                console.error(error);
 
-    if (error)
-        return;
+                // Skip to next song in array
+                musicQueue.songs.shift();
 
-    dispatcher.setVolumeLogarithmic(musicQueue.volume / 5);
-    musicQueue.channel.send(`Started playing **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
+                // Play first song
+                playFirstSong();
+            });
 
-    musicQueue.playing = true;
-    musicQueue.songs[0].playing = true;
+        dispatcher.setVolumeLogarithmic(musicQueue.volume / 5);
+        if (musicQueue.songs[0].artist != '.')
+            musicQueue.channel.send(`Started playing **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
+        else
+            musicQueue.channel.send(`Started playing **${musicQueue.songs[0].title}**.`);
+
+        musicQueue.playing = true;
+        musicQueue.songs[0].playing = true;
+    }
+    catch(e) {
+        console.error(`Error occured trying to play **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`)
+        if (musicQueue.songs[0].artist != '.')
+            musicQueue.channel.send(`Error occured trying to play **${musicQueue.songs[0].title}** by *${musicQueue.songs[0].artist}*.`);
+        else
+            musicQueue.channel.send(`Error occured trying to play **${musicQueue.songs[0].title}**.`);
+        musicQueue.channel.send(`Skipping to next song.`);
+
+        // Skip to next song in array
+        musicQueue.songs.shift();
+
+        // Play next song
+        playFirstSong();
+    }
 }
 
 
 /**
  * Return the song lyrics
- * @param artist 
- * @param title 
+ * @param artist
+ * @param title
  */
 async function getLyrics(artist, title) {
     let lyrics = `Lyrics of **${title}** by *${artist}* :\n\n`;
+    if (artist == '.')
+        lyrics = `Lyrics of **${title}** :\n\n`;
 
     lyrics += await m_lyricsFinder(artist, title) || "Lyrics not found.";
     if (lyrics.length == 0)
         return "Lyrics not found.";
     return lyrics;
 }
-
