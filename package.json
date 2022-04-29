@@ -14,6 +14,6 @@
     "ffmpeg": "0.0.4",
     "lyrics-finder": "^21.7.0",
     "youtube-playlist": "^1.0.4",
-    "ytdl-core": "^4.10.1"
+    "ytdl-core": "^4.11.0"
   }
 }
