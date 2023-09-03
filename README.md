@@ -23,3 +23,4 @@ Here are the current list of commands:
 - `/queue`: List all of the current tracks in the queue.
 - `/skip`: Skip the current playing song.
 - `/stop`: Stop the player and clear the queue.
+- `/lyrics`: Get the lyrics of the current playing song.

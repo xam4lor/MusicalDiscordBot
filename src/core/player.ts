@@ -1,6 +1,7 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, NoSubscriberBehavior, PlayerSubscription, VoiceConnection } from '@discordjs/voice';
 import { ChatInputCommandInteraction } from 'discord.js';
 import { FluxHandler } from './flux_handler.ts';
+import lyricsSearcher from 'lyrics-searcher';
 
 /**
  * A class that handles playing music.
@@ -79,11 +80,11 @@ class Player {
         let message = 'Current tracks in queue:\n';
         const current = this.fluxHandler.getCurrent();
         if (current) {
-            if (current.artist == '' || current.artist == '.') message += `- Currently playing **${current.title}**.\n`;
+            if (current.artist == '') message += `- Currently playing **${current.title}**.\n`;
             else message += `- Currently playing **${current.title}** by *${current.artist}*.\n`;
         }
         for (const element of this.fluxHandler.getQueue()) {
-            if (element.artist == '' || element.artist == '.') message += `- **${element.title}**.\n`;
+            if (element.artist == '') message += `- **${element.title}**.\n`;
             else message += `- **${element.title}** by *${element.artist}*.\n`;
         }
         await interaction.reply(message);
@@ -101,6 +102,32 @@ class Player {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Find the lyrics of a track by searching on google.
+     */
+    async lyrics(interaction: ChatInputCommandInteraction) {
+        // Check if there is a current track
+        const current = this.fluxHandler.getCurrent();
+        if (!current)
+            return await interaction.reply('No current track.');
+
+        // Find name of the track
+        const artist = current.artist != '' ? current.artist : '';
+        const title = current.title != '' ? current.title : '';
+
+        // Search for lyrics
+        await interaction.reply(`Searching for lyrics of *${title}* by *${artist}*...`);
+        lyricsSearcher(artist, title)
+            .then(async (lyrics) => {
+                await interaction.editReply(`Lyrics of *${title}* by *${artist}*:\n${lyrics}`);
+            })
+            .catch(async (error) => {
+                await interaction.editReply(`Failed to find lyrics of *${title}* by *${artist}*.`);
+                console.warn(error);
+            });
     }
 
 

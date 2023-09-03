@@ -43,9 +43,11 @@ export class FluxHandler {
 
         // Get song name and artist
         let song = songInfo.videoDetails.media.song || songInfo.videoDetails.title;
-        let artist = songInfo.videoDetails.media.artist || '.';
+        let artist = songInfo.videoDetails.media.artist || '';
         if (song == undefined)
             song = songInfo.videoDetails.title;
+        if (artist == undefined)
+            artist = songInfo.videoDetails.author.name;
 
         // Add track to queue
         this.queue.push({
