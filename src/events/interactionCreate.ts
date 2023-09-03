@@ -1,11 +1,12 @@
-import { Events } from 'discord.js';
+import { Events, Interaction } from 'discord.js';
+import { commands_list } from "../bot.js";
 
 export default {
     name: Events.InteractionCreate,
-    async execute(interaction) {
+    async execute(interaction: Interaction) {
         if (!interaction.isChatInputCommand()) return;
 
-        const command = interaction.client.commands.get(interaction.commandName);
+        const command = commands_list.get(interaction.commandName);
         if (!command) {
             console.error(`No command matching ${interaction.commandName} was found.`);
             return;

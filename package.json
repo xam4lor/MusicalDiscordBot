@@ -3,10 +3,9 @@
     "name": "musical-bot",
     "version": "1.0.0",
     "description": "The best musical bot ever.",
-    "main": "app.js",
     "scripts": {
-        "start": "node app.js",
-        "deploy": "node deploy-commands.js"
+        "start": "ts-node-esm src/bot.ts",
+        "deploy": "ts-node-esm src/deploy-commands.ts"
     },
     "author": "xam4lor",
     "license": "ISC",
@@ -18,5 +17,8 @@
         "lyrics-finder": "^21.7.0",
         "youtube-playlist": "^1.0.4",
         "ytdl-core": "^4.11.0"
+    },
+    "devDependencies": {
+        "ts-node": "^10.9.1"
     }
 }
