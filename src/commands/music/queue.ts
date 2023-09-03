@@ -3,11 +3,10 @@ import player from '../../core/player.ts';
 
 export default {
     data: new SlashCommandBuilder()
-        .setName('pause')
-        .setDescription('Pause the player.'),
+        .setName('queue')
+        .setDescription('List all of the current tracks in the queue.'),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        const pauseStatus = player.pause();
-        await interaction.reply(pauseStatus ? 'Pausing music.' : 'Music is already paused.');
+        player.queue(interaction);
     },
 };

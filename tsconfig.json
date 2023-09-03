@@ -17,7 +17,9 @@
             "node_modules/@types"
         ],
         "sourceMap": false,
-        "baseUrl": "./"
+        "baseUrl": "./",
+        "allowImportingTsExtensions": true,
+        "noEmit": true
     },
     "files": [
         "src/bot.ts",

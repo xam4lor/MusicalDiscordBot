@@ -26,9 +26,6 @@ for (const folder of commandFolders) {
                 if ('data' in command && 'execute' in command) {
                     commands_list.set(command.data.name, command);
                 }
-                else {
-                    console.warn(`The command at ${filePath} is missing a required "data" or "execute" property. It will not be loaded.`);
-                }
             })
             .catch(err => console.warn(`Failed to load command at ${filePath}: ${err}`));
         promises_commands.push(promise);

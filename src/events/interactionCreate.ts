@@ -1,5 +1,5 @@
 import { Events, Interaction } from 'discord.js';
-import { commands_list } from "../bot.js";
+import { commands_list } from "../bot.ts";
 
 export default {
     name: Events.InteractionCreate,

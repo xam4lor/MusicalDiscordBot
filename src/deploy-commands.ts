@@ -17,6 +17,7 @@ for (const folder of commandFolders) {
     // Get the output of each command
     for (const file of commandFiles) {
         const filePath = "file://" + path.join(commandsPath, file).replace(/\\/g, '//');
+        import(filePath);
         const promise = import(filePath)
             .then(command => command.default)
             .then(command => {

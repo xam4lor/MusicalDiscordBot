@@ -1,11 +1,15 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import player from '../../player/player.js';
-import join from './join.js';
+import player from '../../core/player.ts';
+import join from './join.ts';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('play')
-        .setDescription('Play or resume a music/playlist.'),
+        .setDescription('Play or resume a music/playlist.')
+        .addStringOption(option =>
+            option.setName('query')
+                .setDescription('The music/playlist to play.')
+                .setRequired(false)),
 
     async execute(interaction: ChatInputCommandInteraction) {
         // Make sure the player is not paused
@@ -19,11 +23,14 @@ export default {
         else {
             await interaction.reply('Starting playing music.');
         }
-        if (!player.isConnecting()) return;
 
         // Play music
-        console.log(interaction.options);
-        player.play();
-        await interaction.editReply('Playing music (TODO HEHEHEHHEHE).');
+        const query = interaction.options.getString('query') ?? '';
+        if (query !== '') {
+            player.play(interaction, query);
+        }
+        else {
+            await interaction.editReply('Resuming music.');
+        }
     },
 };

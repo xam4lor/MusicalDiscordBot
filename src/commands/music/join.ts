@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { joinVoiceChannel } from '@discordjs/voice';
-import player from '../../player/player.js';
+import player from '../../core/player.ts';
 
 export default {
     data: new SlashCommandBuilder()
@@ -20,7 +20,6 @@ export default {
 
         // Unsubscribe from previous voice connection
         player.unsubscribe();
-        player.setConnecting(true);
 
         // Join voice channel
         await interaction.reply('Joining voice channel.');
@@ -65,7 +64,6 @@ export default {
             if (verbose) await interaction.editReply('Subscribing to audio stream.');
             player.subscribe(voiceConnection);
             if (verbose) await interaction.editReply('Connected to audio stream.');
-            player.setConnecting(false);
         });
     },
 };
