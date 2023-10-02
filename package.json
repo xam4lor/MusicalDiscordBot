@@ -14,7 +14,7 @@
         "discord.js": "^14.13.0",
         "libsodium-wrappers": "^0.7.11",
         "lyrics-searcher": "^1.0.58",
-        "ytdl-core": "^4.11.5"
+        "ytdl-core": "git+ssh://git@github.com:khlevon/node-ytdl-core.git#v4.11.4-patch.2"
     },
     "devDependencies": {
         "@types/node": "^20.5.9",

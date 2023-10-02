@@ -96,6 +96,14 @@ class Player {
     /** Skip the current song */
     skip(): boolean {
         if (this.player.state.status != AudioPlayerStatus.Playing) return false;
+
+        // If no next song, stop the player
+        if (this.fluxHandler.getQueue().length == 0) {
+            this.player.stop();
+            return true;
+        }
+
+        // Request next resource
         const res = this.fluxHandler.requestNextResource();
         if (res.resource) {
             this.player.play(res.resource);
