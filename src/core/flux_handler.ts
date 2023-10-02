@@ -1,5 +1,6 @@
 import { AudioResource, createAudioResource } from "@discordjs/voice";
 import ytdl from "ytdl-core";
+import ytsr from "ytsr";
 
 type AudioOutput = {
     name: string;
@@ -34,20 +35,26 @@ export class FluxHandler {
      * @returns The track that was added to the queue. Null if no track was added.
      */
     async addTrack(query: string): Promise<QueueElement | null> {
-        // Search track
+        // Find url
+        let url = ytdl.validateURL(query) ? query : '';
+        if (url == '') {
+            // Search for the first result
+            const results: any = (await ytsr(query, { limit: 10 }))
+                .items.filter((item) => item.type == 'video');
+            if (results.length == 0) return null;
+            url = results[0].url;
+        }
+
+        // Search for track
         let found = true;
-        const songInfo = await ytdl.getInfo(query)
+        const songInfo = await ytdl.getInfo(url)
             .catch((err) => { console.warn(err); found = false; });
         if (!found || !songInfo)
             return null;
 
         // Get song name and artist
-        let song = songInfo.videoDetails.media.song || songInfo.videoDetails.title;
+        let song = songInfo.videoDetails.media.song || songInfo.videoDetails.title || '';
         let artist = songInfo.videoDetails.media.artist || '';
-        if (song == undefined)
-            song = songInfo.videoDetails.title;
-        if (artist == undefined)
-            artist = songInfo.videoDetails.author.name;
 
         // Add track to queue
         this.queue.push({
@@ -57,7 +64,7 @@ export class FluxHandler {
 
             artist: artist,
             title: song,
-            url: query,
+            url: url,
         });
         return this.queue[this.queue.length - 1];
     }
@@ -72,7 +79,7 @@ export class FluxHandler {
         if (!element) return { name: '', resource: null };
 
         // Format the name of the song
-        const songName = element.artist != '' ? element.title : element.artist + ' - ' + element.title;
+        const songName = this.formatElement(element);
 
         // Extract audio flux
         let options: ytdl.downloadOptions = {
@@ -108,5 +115,9 @@ export class FluxHandler {
     clear() {
         this.queue = [];
         this.current = null;
+    }
+    formatElement(element: QueueElement): string {
+        if (element.artist == '') return `**${element.title}**`;
+        return `**${element.title}** by *${element.artist}*`;
     }
 }

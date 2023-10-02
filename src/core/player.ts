@@ -56,7 +56,7 @@ class Player {
             this.player.state.status == AudioPlayerStatus.Playing
             || this.player.state.status == AudioPlayerStatus.Buffering
         ) {
-            if (track) await interaction.editReply(`Added music *${track.title}* to queue.`);
+            if (track) await interaction.editReply(`Added music ${this.fluxHandler.formatElement(track)} to queue.`);
             else await interaction.editReply('Failed to find music to add to queue.');
             return;
         }
@@ -65,7 +65,7 @@ class Player {
         const res = this.fluxHandler.requestNextResource();
         if (res.resource) {
             this.player.play(res.resource);
-            await interaction.editReply(`Playing music *${res.name}*.`);
+            await interaction.editReply(`Playing music ${res.name}.`);
         }
         else {
             await interaction.editReply(`Failed to play music *${query}*.`);
@@ -78,15 +78,14 @@ class Player {
         if ((this.fluxHandler.getQueue().length + (this.fluxHandler.getCurrent() ? 1 : 0)) == 0)
             return await interaction.reply('No tracks in queue.');
         let message = 'Current tracks in queue:\n';
+
         const current = this.fluxHandler.getCurrent();
-        if (current) {
-            if (current.artist == '') message += `- Currently playing **${current.title}**.\n`;
-            else message += `- Currently playing **${current.title}** by *${current.artist}*.\n`;
-        }
+        if (current)
+            message += `- Currently playing ${this.fluxHandler.formatElement(current)}.\n`;
         for (const element of this.fluxHandler.getQueue()) {
-            if (element.artist == '') message += `- **${element.title}**.\n`;
-            else message += `- **${element.title}** by *${element.artist}*.\n`;
+            message += `- ${this.fluxHandler.formatElement(element)}.\n`;
         }
+
         await interaction.reply(message);
     }
     /** Clear queue */
@@ -123,17 +122,17 @@ class Player {
             return await interaction.reply('No current track.');
 
         // Find name of the track
-        const artist = current.artist != '' ? current.artist : '';
-        const title = current.title != '' ? current.title : '';
+        const artist = current.artist != '' ? current.artist : ' ';
+        const title = current.title != '' ? current.title : ' ';
 
         // Search for lyrics
-        await interaction.reply(`Searching for lyrics of *${title}* by *${artist}*...`);
+        await interaction.reply(`Searching for lyrics of ${this.fluxHandler.formatElement(current)}...`);
         lyricsSearcher(artist, title)
             .then(async (lyrics) => {
-                await interaction.editReply(`Lyrics of *${title}* by *${artist}*:\n${lyrics}`);
+                await interaction.editReply(`Lyrics of ${this.fluxHandler.formatElement(current)}:\n${lyrics}`);
             })
             .catch(async (error) => {
-                await interaction.editReply(`Failed to find lyrics of *${title}* by *${artist}*.`);
+                await interaction.editReply(`Failed to find lyrics of ${this.fluxHandler.formatElement(current)}.`);
                 console.warn(error);
             });
     }
