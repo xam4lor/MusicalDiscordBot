@@ -56,8 +56,21 @@ class Player {
             this.player.state.status == AudioPlayerStatus.Playing
             || this.player.state.status == AudioPlayerStatus.Buffering
         ) {
-            if (track) await interaction.editReply(`Added music ${this.fluxHandler.formatElement(track)} to queue.`);
-            else await interaction.editReply('Failed to find music to add to queue.');
+            if (track.length == 0) {
+                await interaction.editReply('Failed to find music to add to queue.')
+            }
+            if (track.length == 1) {
+                await interaction.editReply(`Added music ${this.fluxHandler.formatElement(track[0])} to queue.`);
+            }
+            else {
+                await interaction.editReply(`Added ${track.length} musics to queue.`);
+
+                let answerText = '';
+                for (const element of track) {
+                    answerText += `- Added music ${this.fluxHandler.formatElement(element)} to queue.\n`;
+                }
+                await interaction.editReply(answerText);
+            }
             return;
         }
         
