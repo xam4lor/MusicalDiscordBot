@@ -68,7 +68,10 @@ class Player {
                 let answerText = '';
                 for (const element of track) {
                     const text = `- Added music ${this.fluxHandler.formatElement(element)} to queue.\n`;
-                    if (answerText.length + text.length > 2000) continue;
+                    if (answerText.length + text.length > 1800) {
+                        answerText += `- ... ${this.fluxHandler.getQueue().length - 1} more tracks in queue.\n`;
+                        break;
+                    }
                     answerText += text;
                 }
                 if (answerText != '')
@@ -100,7 +103,10 @@ class Player {
             message += `- Currently playing ${this.fluxHandler.formatElement(current)}.\n`;
         for (const element of this.fluxHandler.getQueue()) {
             const text = `- ${this.fluxHandler.formatElement(element)}.\n`;
-            if (message.length + text.length > 2000) continue;
+            if (message.length + text.length > 1800) {
+                message += `- ... ${this.fluxHandler.getQueue().length - 1} more tracks in queue.\n`;
+                break;
+            }
             message += text;
         }
 
