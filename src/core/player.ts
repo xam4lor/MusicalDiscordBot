@@ -67,9 +67,12 @@ class Player {
 
                 let answerText = '';
                 for (const element of track) {
-                    answerText += `- Added music ${this.fluxHandler.formatElement(element)} to queue.\n`;
+                    const text = `- Added music ${this.fluxHandler.formatElement(element)} to queue.\n`;
+                    if (answerText.length + text.length > 2000) continue;
+                    answerText += text;
                 }
-                await interaction.editReply(answerText);
+                if (answerText != '')
+                    await interaction.editReply(answerText);
             }
             return;
         }
@@ -96,7 +99,9 @@ class Player {
         if (current)
             message += `- Currently playing ${this.fluxHandler.formatElement(current)}.\n`;
         for (const element of this.fluxHandler.getQueue()) {
-            message += `- ${this.fluxHandler.formatElement(element)}.\n`;
+            const text = `- ${this.fluxHandler.formatElement(element)}.\n`;
+            if (message.length + text.length > 2000) continue;
+            message += text;
         }
 
         await interaction.reply(message);

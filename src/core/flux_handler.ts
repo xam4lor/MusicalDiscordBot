@@ -91,7 +91,6 @@ export class FluxHandler {
             // Get song name and artist
             let songDetails: any = await ytsr(url, { limit: 1 })
                 .catch((err) => { console.warn(err); found = false; });
-            console.log(songDetails);
             if (!found || !songDetails || songDetails.items.length == 0)
                 return [];
             let title = songDetails.items[0].title;
