@@ -46,10 +46,11 @@ class Player {
      * Play music in the voice channel.
      * @param interaction 
      * @param query Query to search for music.
+     * @param top Whether to play the music at the top of the queue.
      */
-    async play(interaction: ChatInputCommandInteraction, query: string) {
+    async play(interaction: ChatInputCommandInteraction, query: string, top: boolean = false) {
         // Add track to queue
-        const track = await this.fluxHandler.addTrack(query);
+        const track = await this.fluxHandler.addTrack(query, top);
 
         // If already playing, do nothing
         if (

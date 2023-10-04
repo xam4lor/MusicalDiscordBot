@@ -33,9 +33,10 @@ export class FluxHandler {
     /**
      * Add a track to the queue.
      * @param query The query to search for the track.
+     * @param top Whether to add the track at the top of the queue.
      * @returns The track that was added to the queue. Null if no track was added.
      */
-    async addTrack(query: string): Promise<QueueElement[]> {
+    async addTrack(query: string, top: boolean): Promise<QueueElement[]> {
         // Find url
         let url = ytdl.validateURL(query) ? query : '';
         if (url == '') {
@@ -66,15 +67,25 @@ export class FluxHandler {
 
                 // Get song name and artist
                 let songDetails: any = await ytsr(item.url, { limit: 1 });
+                if (!songDetails || songDetails.items.length == 0)
+                    continue;
                 let title = songDetails.items[0].title;
                 let artist = songDetails.items[0].author.name;
 
                 // Add track to queue
-                this.queue.push({
-                    id: this.INDEX++,
-                    query: item.url, info_raw: songInfo,
-                    artist, title, url: item.url,
-                });
+                if (top)
+                    this.queue.unshift({
+                        id: this.INDEX++,
+                        query: item.url, info_raw: songInfo,
+                        artist, title, url: item.url,
+                    });
+                else {
+                    this.queue.push({
+                        id: this.INDEX++,
+                        query: item.url, info_raw: songInfo,
+                        artist, title, url: item.url,
+                    });
+                }
                 newTracks.push(this.queue[this.queue.length - 1]);
             }
         }
@@ -97,11 +108,18 @@ export class FluxHandler {
             let artist = songDetails.items[0].author.name;
 
             // Add track to queue
-            this.queue.push({
-                id: this.INDEX++,
-                query, info_raw: songInfo,
-                artist, title, url,
-            });
+            if (top)
+                this.queue.unshift({
+                    id: this.INDEX++,
+                    query, info_raw: songInfo,
+                    artist, title, url,
+                });
+            else
+                this.queue.push({
+                    id: this.INDEX++,
+                    query, info_raw: songInfo,
+                    artist, title, url,
+                });
             newTracks.push(this.queue[this.queue.length - 1]);
         }
 
