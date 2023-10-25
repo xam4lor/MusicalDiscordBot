@@ -4,8 +4,9 @@
 A discord bot that can be used to play music from youtube.
 
 ## Setup
+- Run `npm install` (this is important!)
 - Create a file called `config.json` in the root directory based on the `config.template.json` file.
-- Fill in the properties in the `config.json` file with your own API discord tokens. To do this, you'll need to create a bot on `https://discord.com/developers/applications` and check the options `bot`, `applications.commands` and `Administrator` in the `Bot Permissions` section.
+- Fill in the properties in the `config.json` file with your own API discord tokens. To do this, you'll need to create a bot on `https://discord.com/developers/applications` and check the options `bot`, `applications.commands` and `Administrator` in the `Bot Permissions` section. Then you will need to fill the `discord_token` (private token of the bot under the `Bot` tab) and the `discord_client` (*application ID*, found in the `General information` tab).
 - Run `npm run deploy` once. This will register the commands on your bot on the discord server.
 - Run `npm run start` each time you want to run your bot.
 - Invite the bot to your server using the link `https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=8&scope=bot%20applications.commands`.
