@@ -140,7 +140,7 @@ class Player {
     async shuffle(interaction: ChatInputCommandInteraction) {
         // Fisher-Yates shuffle algorithm
         // (https://stackoverflow.com/a/2450976/7483388)
-        function shuffle_arr(array) {
+        function shuffle_arr(array: any[]) {
             let currentIndex = array.length,  randomIndex;
         
             // While there remain elements to shuffle.
