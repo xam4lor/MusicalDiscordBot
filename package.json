@@ -1,11 +1,10 @@
 {
-    "type": "module",
     "name": "musical-bot",
     "version": "1.0.0",
     "description": "The best musical bot ever.",
     "scripts": {
-        "start": "ts-node-esm src/bot.ts",
-        "deploy": "ts-node-esm src/deploy-commands.ts"
+        "start": "npx tsx src/bot.ts",
+        "deploy": "npx tsx src/deploy-commands.ts"
     },
     "author": "xam4lor",
     "license": "ISC",
@@ -20,6 +19,7 @@
     },
     "devDependencies": {
         "@types/node": "^20.5.9",
-        "ts-node": "^10.9.1"
+        "ts-node": "^10.9.1",
+        "tsx": "^4.16.2"
     }
 }
