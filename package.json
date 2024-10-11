@@ -10,10 +10,10 @@
     "license": "ISC",
     "dependencies": {
         "@discordjs/voice": "^0.16.0",
+        "@distube/ytdl-core": "^4.14.4",
         "discord.js": "^14.13.0",
         "libsodium-wrappers": "^0.7.11",
         "lyrics-searcher": "^1.0.58",
-        "ytdl-core": "git+ssh://git@github.com:khlevon/node-ytdl-core.git#v4.11.4-patch.2",
         "ytpl": "^2.3.0",
         "ytsr": "^3.8.4"
     },

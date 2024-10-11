@@ -52,14 +52,18 @@ class Player {
         // Add track to queue
         const track = await this.fluxHandler.addTrack(query, top);
 
+        // Check if there is a track
+        let error_message = false;
+        if (track.length == 0) {
+            error_message = true;
+            await interaction.editReply('Failed to find music to add to queue. If it is a playlist, be sure that it is public and is not a mix.');
+        }
+
         // If already playing, do nothing
         if (
             this.player.state.status == AudioPlayerStatus.Playing
             || this.player.state.status == AudioPlayerStatus.Buffering
         ) {
-            if (track.length == 0) {
-                await interaction.editReply('Failed to find music to add to queue.')
-            }
             if (track.length == 1) {
                 await interaction.editReply(`Added music ${this.fluxHandler.formatElement(track[0])} to queue.`);
             }
@@ -87,7 +91,7 @@ class Player {
             this.player.play(res.resource);
             await interaction.editReply(`Playing music ${res.name}.`);
         }
-        else {
+        else if (!error_message) {
             await interaction.editReply(`Failed to play music *${query}*.`);
         }
     }

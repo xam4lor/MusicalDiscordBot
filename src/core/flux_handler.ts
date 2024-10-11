@@ -1,5 +1,5 @@
 import { AudioResource, createAudioResource } from "@discordjs/voice";
-import ytdl from "ytdl-core";
+import ytdl from "@distube/ytdl-core";
 import ytpl from "ytpl";
 import ytsr from "ytsr";
 
@@ -54,7 +54,13 @@ export class FluxHandler {
         const playlistIndex = url.includes('list=') ? url.split('list=')[1].split('&')[0] : '';
         if (playlistIndex != '') {
             // Add all tracks of the playlist to the queue
-            const playlist = await ytpl(playlistIndex, { limit: 50 });
+            let playlist;
+            try {
+                playlist = await ytpl(playlistIndex, { limit: 50 });
+            } catch (err) {
+                console.error("Failed to get playlist. Be sure that the playlist is public and is not a mix: ", err);
+                return [];
+            }
             for (const item of playlist.items) {
                 let found = true;
                 const songInfo = await ytdl.getInfo(item.url)
@@ -66,11 +72,8 @@ export class FluxHandler {
                 item.url = item.url.split('&list=')[0];
 
                 // Get song name and artist
-                let songDetails: any = await ytsr(item.url, { limit: 1 });
-                if (!songDetails || songDetails.items.length == 0)
-                    continue;
-                let title = songDetails.items[0].title;
-                let artist = songDetails.items[0].author.name;
+                let title = songInfo.videoDetails.title;
+                let artist = songInfo.videoDetails.author.name;
 
                 // Add track to queue
                 if (top)
@@ -100,12 +103,8 @@ export class FluxHandler {
                 return [];
 
             // Get song name and artist
-            let songDetails: any = await ytsr(url, { limit: 1 })
-                .catch((err) => { console.warn(err); found = false; });
-            if (!found || !songDetails || songDetails.items.length == 0)
-                return [];
-            let title = songDetails.items[0].title;
-            let artist = songDetails.items[0].author.name;
+            let title = songInfo.videoDetails.title;
+            let artist = songInfo.videoDetails.author.name;
 
             // Add track to queue
             if (top)
